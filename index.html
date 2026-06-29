@@ -205,7 +205,7 @@ const NET={mode:'local',role:'local',myIdx:0,peer:null,conn:null,code:null,
 function onNetClosed(){alert('Se cortó la conexión con el otro teléfono.');NET.reset();screenStart();}
 
 /* ----------------------------- TABLERO 3D -------------------------------- */
-let renderer,scene,camera,tiles=[],tokens=[],die,dieSpin=0,raf,scene3DReady=false,lastPos=[-1,-1];
+let renderer,scene,camera,tiles=[],tileIcons=[],tokens=[],die,dieSpin=0,raf,scene3DReady=false,lastPos=[-1,-1];
 const camState={radius:14,theta:0,phi:0.92};
 function ringPositions(){const N=5,gap=1.32,off=(N-1)/2,ring=[],pts=[];
   for(let c=0;c<N;c++)ring.push([0,c]);for(let r=1;r<N;r++)ring.push([r,N-1]);for(let c=N-2;c>=0;c--)ring.push([N-1,c]);for(let r=N-2;r>=1;r--)ring.push([r,0]);
@@ -214,6 +214,14 @@ function updateCamera(){if(!camera)return;const r=camState.radius,p=camState.phi
   camera.position.set(r*Math.sin(p)*Math.sin(t),r*Math.cos(p),r*Math.sin(p)*Math.cos(t));camera.lookAt(0,0,0);}
 function symbolTexture(emoji,bgHex){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
   x.fillStyle=bgHex;x.fillRect(0,0,128,128);x.font='72px serif';x.textAlign='center';x.textBaseline='middle';x.fillText(emoji,64,72);return new THREE.CanvasTexture(c);}
+function iconBadge(emoji,bgHex){const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d');
+  x.save();x.shadowColor=bgHex;x.shadowBlur=26;x.fillStyle=bgHex;x.beginPath();x.arc(80,80,62,0,7);x.fill();x.restore();
+  x.beginPath();x.arc(80,80,62,0,7);x.fillStyle=bgHex;x.fill();
+  const g=x.createRadialGradient(58,52,6,80,80,66);g.addColorStop(0,'rgba(255,255,255,.6)');g.addColorStop(.55,'rgba(255,255,255,0)');
+  x.fillStyle=g;x.beginPath();x.arc(80,80,62,0,7);x.fill();
+  x.strokeStyle='rgba(255,255,255,.35)';x.lineWidth=3;x.beginPath();x.arc(80,80,61,0,7);x.stroke();
+  x.font='74px serif';x.textAlign='center';x.textBaseline='middle';x.fillText(emoji,80,86);
+  const t=new THREE.CanvasTexture(c);return t;}
 function avatarTexture(entry,ringHex){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
   x.fillStyle=ringHex;x.beginPath();x.arc(64,64,62,0,7);x.fill();x.fillStyle='#1a1320';x.beginPath();x.arc(64,64,55,0,7);x.fill();
   const tex=new THREE.CanvasTexture(c);
@@ -234,9 +242,10 @@ function initScene(){if(typeof THREE==='undefined'){console.warn('Sin 3D — cor
   const base=new THREE.Mesh(new THREE.BoxGeometry(8.6,0.5,8.6),new THREE.MeshStandardMaterial({color:0x241826,roughness:.85,metalness:.1}));base.position.y=-0.45;scene.add(base);
   const inlay=new THREE.Mesh(new THREE.BoxGeometry(7.5,0.06,7.5),new THREE.MeshStandardMaterial({color:0x33223a,roughness:.6,emissive:0x1a0f1f}));inlay.position.y=-0.16;scene.add(inlay);
   const pts=ringPositions();pts.forEach((p,i)=>{const cat=MODE_PACK.boardTypes[i],meta=SYMBOLS[cat];
-    const side=new THREE.MeshStandardMaterial({color:meta.color,roughness:.5,metalness:.2});
-    const top=new THREE.MeshStandardMaterial({map:symbolTexture(meta.emoji,hex(meta.color)),roughness:.45,metalness:.15});
-    const m=new THREE.Mesh(new THREE.BoxGeometry(.94,.22,.94),[side,side,top,side,side,side]);m.position.set(p[0],0,p[2]);scene.add(m);tiles.push(m);});
+    const mat=new THREE.MeshStandardMaterial({color:meta.color,roughness:.5,metalness:.2});
+    const m=new THREE.Mesh(new THREE.BoxGeometry(.94,.22,.94),mat);m.position.set(p[0],0,p[2]);scene.add(m);tiles.push(m);
+    const badge=new THREE.Mesh(new THREE.PlaneGeometry(.62,.62),new THREE.MeshBasicMaterial({map:iconBadge(meta.emoji,hex(meta.color)),transparent:true,depthWrite:false,side:THREE.DoubleSide}));
+    badge.position.set(p[0],.62,p[2]);badge.userData={baseY:.62,off:i*0.7,pop:0};scene.add(badge);tileIcons.push(badge);});
   [0,1].forEach(i=>{const g=buildToken(i);scene.add(g);tokens.push(g);});
   die=new THREE.Mesh(new THREE.BoxGeometry(.7,.7,.7),new THREE.MeshStandardMaterial({color:0xfff2dc,roughness:.35,metalness:.1}));die.position.set(0,.8,0.1);scene.add(die);
   scene3DReady=true;setupControls(cv);animate();addEventListener('resize',resize);}
@@ -246,8 +255,11 @@ function placeTokens(instant){if(!scene3DReady||!Engine.state)return;tokens.forE
 function updateTokenAppearance(){if(!scene3DReady)return;[0,1].forEach(i=>{const e=Profile.data['p'+(i+1)],col=e.color,ud=tokens[i].userData;
   ud.ring.material.color.setHex(col);ud.ring.material.emissive.setHex(col);ud.body.material.color.setHex(col);ud.disc.material.map=avatarTexture(e,hex(col));ud.disc.material.needsUpdate=true;});}
 function syncBoard(){if(!scene3DReady||!Engine.state)return;const p0=Engine.state.players[0].pos,p1=Engine.state.players[1].pos;
-  if(p0!==lastPos[0]||p1!==lastPos[1]){const moved=lastPos[0]!==-1;placeTokens(!moved);if(moved)dieSpin=18;lastPos=[p0,p1];}}
-function animate(){raf=requestAnimationFrame(animate);const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(p0!==lastPos[0]||p1!==lastPos[1]){const moved=lastPos[0]!==-1;placeTokens(!moved);if(moved){dieSpin=18;if(tileIcons[p0])tileIcons[p0].userData.pop=1;if(tileIcons[p1])tileIcons[p1].userData.pop=1;}lastPos=[p0,p1];}}
+function animate(){raf=requestAnimationFrame(animate);const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;const tnow=performance.now()*0.001;
+  tileIcons.forEach(ic=>{if(camera)ic.quaternion.copy(camera.quaternion);const u=ic.userData;
+    if(u.pop>0)u.pop=Math.max(0,u.pop-0.035);const bob=reduce?0:Math.sin(tnow*1.5+u.off)*0.05;const s=1+u.pop*0.45;
+    ic.position.y=u.baseY+bob+u.pop*0.22;ic.scale.set(s,s,s);});
   tokens.forEach(t=>{if(t.userData.disc&&camera)t.userData.disc.quaternion.copy(camera.quaternion);
     if(t.userData.to){t.userData.t=Math.min(1,(t.userData.t||0)+(reduce?1:.08));t.position.lerp(t.userData.to,reduce?1:.18);t.position.y=.1+(reduce?0:Math.sin(t.userData.t*Math.PI)*.4);if(t.userData.t>=1){t.position.copy(t.userData.to);t.userData.to=null;}}});
   if(dieSpin>0&&!reduce){die.rotation.x+=.34;die.rotation.y+=.27;dieSpin--;if(dieSpin===0)die.rotation.set(0,0,0);}
