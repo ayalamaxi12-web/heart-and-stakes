@@ -1,110 +1,60 @@
-# Heart &amp; Stakes — Core-Loop Prototype
+# Corazones y Apuestas — Playable MVP
 
-**NOVA FORGE STUDIO · COUPLES BOARD GAME (working title)**
-Engine codename: **NOVA Board Engine (NBE)**
+**NOVA FORGE STUDIO · couples board game (working title)**
+Engine codename: **NOVA Board Engine (NBE)** · Final internal-review build.
 
----
-
-## What this is (and is not)
-
-This is a **playable, end-to-end prototype of the core gameplay loop** — built in Release Mode to get the game into your hands fast and validate that the loop is *fun* on a single shared device.
-
-It is **not** the full production MVP described in the GDD. To be transparent about scope:
-
-| In this prototype | Deferred to the real MVP (per GDD) |
-|---|---|
-| Full turn loop: roll → move → land → resolve → score → win → recap | Unity / store-grade 3D, haptics, full art & audio |
-| Signature **Reveal &amp; Guess** mechanic with the **blind-pass** (phone hand-off) | All other modes (Romance, Hot, Adventure, Party, Trivia, Escape) |
-| **Dual-track scoring** (personal Sparks + shared Connection meter) | Persistent Couple Profile, cosmetics, AI avatars |
-| No-loser end framing | Cloud sync / profile resilience |
-| Names + colors personalization | Localization, accessibility pass, full safety/consent system |
-| A 3D board (Three.js) glowing on a dark table | Tuned content depth, anti-repetition at scale |
-| A miniature of the GDD **engine/content split** (see below) | |
-
-Two QA-critical findings from the GDD review are **already resolved here**: the
-"private guess on a shared device" contradiction is solved by the **blind-pass**
-ritual, and every sensitive/optional beat (wagers) is opt-in with a free,
-penalty-less skip.
-
-> Profile **persistence is intentionally absent** in this prototype (browser
-> storage is out of scope here). Data resilience for the real personalization
-> feature is a tracked MVP requirement, not a prototype concern.
+A premium-feeling 3D couples board game. Two players, **single-device** (pass-and-play)
+**or two-device online** (room code, no backend). Spanish UI. Custom prompt editor.
 
 ---
 
-## How to run locally
+## What's in this build
 
-No build step. No install.
+- **Two play modes**
+  - *Un solo teléfono* — both players share one device; a "blind pass" veil keeps the guess secret.
+  - *Dos teléfonos* — peer-to-peer over WebRTC (PeerJS), room-code based, **no server to run**. Each player uses their own phone; the guess is naturally private. The host device is the authoritative game state; the guest is a thin client sending intents.
+- **Signature mechanic** — *Revelar y adivinar* (Reveal & Guess) with dual-track scoring: personal **Chispas** (Sparks) + a shared **Conexión** (Connection) meter. No-loser end framing.
+- **3D board** — bigger, touch-controlled: one finger orbits, two fingers pinch-zoom. Tiles show their **type symbol** (❓ Pregunta · 🎭 Reto · 🔥 Apuesta · 💛 Momento · 🎁 Premio) so you know what awaits *before* you land — without spoiling the content.
+- **Avatars** — pick an emoji or **use your own photo**; pieces show a glowing ring + avatar.
+- **Prompt editor** — choose which prompts are active, create/edit/delete your own, with on-device persistence and a backup/import (export text).
+- **Engine/content split** (GDD §4) realized in one file: `MODE_PACK` + `Content` (data) · `Engine` + `hostApply`/`viewForCat` (runtime) · 3D/UI (presentation). A view-sync state machine drives both play modes from the same logic.
 
-1. Open `index.html` in any modern browser (double-click works), **or** serve the folder:
-   ```
-   npx serve .          # or: python3 -m http.server
-   ```
-2. Hold the phone/tablet between two people and play.
+## Honest scope (this is a prototype)
 
-> Internet is needed on first load for the Three.js library and fonts (loaded
-> from CDN). To run fully offline, vendor `three.min.js` locally and swap the
-> `<script>` / font `<link>` tags for local files.
+- The 3D library and (for online play) the WebRTC broker load from CDN — **internet is required** on first load; online play also needs the network to allow a WebRTC connection (works on most home/mobile networks, not guaranteed on every restricted network).
+- **Photo avatars** use your actual photo as the avatar image. *AI-generated 3D avatars from a photo* remain a future, backend-dependent feature.
+- In online play, the **active deck is the host's** (the host resolves all prompts). Each device still keeps its own editable deck for when it hosts.
+- Persistence is **per-device** (browser storage). Use the editor's backup/import to move custom prompts between phones. Cross-device profile sync is a post-MVP, backend feature.
 
-**Best experience:** a phone or small tablet, portrait, two people in the same room.
+## Run locally
 
----
+No build step. Open `index.html` in a modern browser (double-click), or serve the folder:
 
-## How to play
+```
+npx serve .        # or: python3 -m http.server
+```
 
-1. **Begin** → enter both names and pick a color each (or **Quick start**).
-2. On your turn, **Roll the die** — your piece travels around the board.
-3. The tile you land on decides what happens:
-   - **Reveal &amp; Guess** — the *signature*. One partner secretly guesses the
-     other's answer. The phone asks you to look away and hand it over (the
-     **blind pass**). Both score: guessing right means you're *in sync*; a wild
-     answer means you *surprised* each other — and that scores too. Nobody loses.
-   - **In sync?** — a quick this-or-that; matching earns Sparks for both.
-   - **Playful** — a light dare, judged by your partner.
-   - **A quiet moment** — a scoreless connection beat.
-   - **Wager** — optional stakes; saying no is always free.
-   - **Reward** — a little Sparks gift.
-4. Two scores rise together: your personal **Sparks** (the friendly rivalry) and
-   the shared **Connection** meter (the thing you build *together*).
-5. First piece around the board ends the round. The recap celebrates **both** of
-   you — whoever led on Sparks, and whether you reached **Deep Connection**.
+## Publish to GitHub Pages
 
----
+1. Put `index.html` at the **repo root**.
+2. Commit. (Replacing an existing `index.html` just overwrites it.)
+3. Settings → Pages → Deploy from branch → `main` / `/root` → Save.
+4. After ~1 min the site is live at `https://<user>.github.io/<repo>/`.
 
-## The engine/content split (why this matters)
+**Two-device play:** both phones open the **same** published URL. One taps *Dos teléfonos → Crear sala* and reads out the 4-letter code; the other taps *Unirme* and enters it.
 
-Open `index.html` and you'll find the JavaScript organized in three blocks that
-mirror **GDD §4**:
+## Deploy (optional)
 
-- **`MODE_PACK`** — pure content: the board layout, the decks of prompts, the
-  scoring profile and win condition, the theme. *This is data.*
-- **`Engine`** — content-agnostic runtime: roll, advance, draw, score, win-check,
-  turn handoff. *It knows nothing about romance or trivia.*
-- **3D / UI** — presentation.
+As a static site it can also be hosted on Netlify or a Railway static service. A 3D
+mobile *product* would not use Railway as its runtime; Railway is reserved for future
+backend/web services (e.g. profile sync or a content API), which this build doesn't need.
 
-Swapping `MODE_PACK` for a different one (e.g. a Trivia or Adventure pack) would
-change the game **without touching the engine** — the platform thesis, proven in
-miniature. This is the seed of the future `forge` graduation candidate.
+## QA notes (final pass)
 
----
-
-## Deployment note (Railway)
-
-Per ADR-0001 and Release-Mode guidance, Railway deployment is **optional, not
-blocking** for this prototype. As a static site it can be hosted anywhere
-(GitHub Pages, Netlify, or a Railway static service). A 3D mobile *product* MVP
-would not target Railway as its runtime — Railway is the studio's home for
-backend/web services (e.g. a future profile-sync or content API), which this
-prototype does not yet need.
-
----
-
-## Status &amp; next steps
-
-- **Phase:** built in Release Mode from Phase-2 design (GDD v0.1).
-- **Recommended path forward:** validate the loop with a real couple, fold
-  learnings back into **GDD v1.0**, then run the compressed Phases 3–7 (UX,
-  Technical Architecture / stack ADR-0002, Visual Direction, Roadmap, GitHub
-  setup) before the production MVP build.
+Automated checks run before delivery: JS syntax validated; a 2000-game headless
+simulation confirmed every match terminates, averages ~14 turns, and reaches the
+lap-win before the turn cap ~99% of the time. Four logic issues found and fixed:
+turn-counter double increment, online handshake message ordering, lobby role state
+on avatar/color change, and win-preview/authoritative-win alignment.
 
 *A NOVA FORGE STUDIO product. Built to be the foundation, not a one-off.*
