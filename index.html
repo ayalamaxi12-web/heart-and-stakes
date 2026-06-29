@@ -229,7 +229,7 @@ const Engine = {
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 
 /* ----------------------------- 3D BOARD (presentation) ------------------- */
-let renderer, scene, camera, tiles=[], tokens=[], die, dieSpin=0, raf;
+let renderer, scene, camera, tiles=[], tokens=[], die, dieSpin=0, raf, scene3DReady=false;
 const TYPE_COLOR = { start:0xf4b860, prompt:0xf4b860, reward:0x8fd6a0,
                      safe:0x8fb8e0, wager:0xe8717a, goal:0xffe2a8 };
 function ringPositions(){
@@ -244,6 +244,7 @@ function ringPositions(){
   return pts; // 16 points
 }
 function initScene(){
+  if(typeof THREE==='undefined'){ console.warn('3D library unavailable — running without board.'); return; }
   const cv=document.getElementById('scene');
   renderer=new THREE.WebGLRenderer({canvas:cv, antialias:true, alpha:true});
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
@@ -293,6 +294,7 @@ function initScene(){
   die.position.set(0,.7,0.1); scene.add(die);
 
   placeTokens(true);
+  scene3DReady=true;
   animate();
   addEventListener('resize', resize);
 }
@@ -305,6 +307,7 @@ function tokenTarget(idx){
   return new THREE.Vector3(p[0]+o, .22, p[2]+o);
 }
 function placeTokens(instant){
+  if(!scene3DReady) return;
   tokens.forEach((t,i)=>{ const tg=tokenTarget(i);
     if(instant){t.position.copy(tg);} else {t.userData.to=tg; t.userData.t=0;} });
 }
@@ -323,6 +326,7 @@ function animate(){
   renderer.render(scene,camera);
 }
 function pulseTile(pos){
+  if(!scene3DReady) return;
   const m=tiles[pos]; if(!m) return; m.material.emissive.setHex(0x5a3a12);
   setTimeout(()=>m.material.emissive.setHex(0x000000),900);
 }
@@ -377,9 +381,11 @@ function startGame(){
   setup.p1.name=$('in1')?.value.trim()||"Player 1";
   setup.p2.name=$('in2')?.value.trim()||"Player 2";
   Engine.newGame(setup.p1,setup.p2,MODE_PACK);
-  // recolor tokens + hud to chosen colors
-  tokens[0].children.forEach(m=>m.material.color.setHex(setup.p1.color));
-  tokens[1].children.forEach(m=>m.material.color.setHex(setup.p2.color));
+  // recolor tokens + hud to chosen colors (only if 3D board is present)
+  if(scene3DReady){
+    tokens[0].children.forEach(m=>m.material.color.setHex(setup.p1.color));
+    tokens[1].children.forEach(m=>m.material.color.setHex(setup.p2.color));
+  }
   $('d1').style.background=hex(setup.p1.color); $('d2').style.background=hex(setup.p2.color);
   $('n1').textContent=setup.p1.name; $('n2').textContent=setup.p2.name;
   document.getElementById('hud').style.display='flex';
@@ -631,7 +637,18 @@ function playAgain(){ tokens.forEach(t=>t.userData.to=null);
   Engine.newGame(setup.p1,setup.p2,MODE_PACK); placeTokens(true); refreshHud(); turnIntro(); }
 
 /* ----------------------------- BOOT -------------------------------------- */
-window.addEventListener('load', ()=>{ initScene(); screenStart(); });
+function boot3D(){ try { initScene(); } catch(e){ console.warn('3D board failed to start; game runs without it.', e); } }
+window.addEventListener('load', ()=>{
+  screenStart();                                  // UI first — never depends on 3D
+  if(typeof THREE!=='undefined'){ boot3D(); }
+  else {                                           // primary CDN blocked? try a fallback, then boot
+    const s=document.createElement('script');
+    s.src='https://unpkg.com/three@0.128.0/build/three.min.js';
+    s.onload=boot3D;
+    s.onerror=()=>console.warn('3D library unavailable on this network — playing without the board.');
+    document.head.appendChild(s);
+  }
+});
 </script>
 </body>
 </html>
