@@ -70,6 +70,13 @@
   .hint{position:fixed;top:60px;left:0;right:0;text-align:center;z-index:1;font-size:11px;color:rgba(185,168,176,.5);pointer-events:none;}
   .foottag{position:fixed;bottom:5px;left:0;right:0;text-align:center;z-index:1;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:rgba(185,168,176,.4);}
   @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important;}}
+.card--draw{animation:flipin .52s cubic-bezier(.2,.8,.2,1) both;}
+@keyframes flipin{0%{opacity:0;transform:perspective(900px) rotateY(-78deg) translateY(8px);}55%{opacity:1;}100%{opacity:1;transform:perspective(900px) rotateY(0);}}
+.bonus{background:rgba(143,214,160,.12);border:1px solid rgba(143,214,160,.4);color:#a7e3b6;border-radius:14px;padding:11px 14px;font-size:14px;font-weight:600;margin-top:6px;}
+.dice{font-size:118px;line-height:1;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.04em;margin:12px 0 6px;
+  background:linear-gradient(180deg,var(--glow-soft),var(--glow));-webkit-background-clip:text;background-clip:text;color:transparent;}
+.dice--land{animation:diceland .34s cubic-bezier(.2,.9,.2,1);}
+@keyframes diceland{0%{transform:scale(.55);}60%{transform:scale(1.18);}100%{transform:scale(1);}}
 </style>
 </head>
 <body>
@@ -102,26 +109,36 @@
    =========================================================================== */
 
 /* ----------------------- CONTENIDO POR DEFECTO --------------------------- */
-const CAT_LABEL={reveal:'Revelar y adivinar',match:'¿En sintonía?',playful:'Juego / Reto',connection:'Momento',wager:'Apuesta'};
+const CAT_LABEL={reveal:'Revelar y adivinar',match:'¿En sintonía?',playful:'Juego / Reto',prenda:'Prenda',castigo:'Castigo',connection:'Momento',wager:'Apuesta'};
 const CAT_HELP={reveal:'Una pregunta sobre quien responde. Escribí {a} para su nombre.',match:'Una opción A o B para responder al mismo tiempo.',
-  playful:'Un reto para hacer. Escribí {p} para el nombre de la pareja.',connection:'Un momento lindo, sin puntos.',wager:'Una apuesta opcional con premio.'};
+  playful:'Un reto para hacer. Escribí {p} para el nombre de la pareja.',prenda:'Sacarse una prenda (o lo que pongas). {p}=pareja.',castigo:'Un trago o un reto. {p}=pareja.',connection:'Un momento lindo, sin puntos.',wager:'Una apuesta opcional con premio.'};
 const DEFAULT_CONTENT={
   reveal:["{a}, ¿cuál sería tu domingo perfecto sin hacer nada?","{a}, si pudiéramos teletransportarnos ahora mismo, ¿a dónde irías?",
     "{a}, ¿qué cosa chiquita siempre te alegra el día?","{a}, ¿cuál es tu canción de consuelo secreta?","{a}, ¿qué pedís siempre en el café?",
     "{a}, ¿en qué mundo de ficción te gustaría vivir?","{a}, ¿qué es lo primero que comprarías si la plata no importara?",
     "{a}, ¿qué comida podrías comer feliz todos los días?","{a}, ¿cuál es tu idea de una cita perfecta?","{a}, ¿en qué sos raramente bueno/a?",
-    "{a}, ¿cuál es el emoji que más usás?","{a}, ¿de qué cosa chiquita estás orgulloso/a esta semana?"],
+    "{a}, ¿cuál es el emoji que más usás?","{a}, ¿de qué cosa chiquita estás orgulloso/a esta semana?",
+    "{a}, ¿qué fue lo primero que te atrajo de mí?","{a}, ¿dónde te gustaría que te dé un beso ahora mismo?",
+    "{a}, ¿cuál es tu fantasía más reciente con nosotros dos?","{a}, ¿qué prenda mía te gusta más cómo me queda?","{a}, ¿qué es lo más atrevido que te gustaría probar conmigo?","{a}, ¿qué parte de mí mirás primero?","{a}, ¿a dónde te escaparías un finde conmigo?","{a}, ¿cuál fue tu momento favorito juntos este mes?","{a}, ¿qué te gustaría que haga más seguido?"],
   match:["¿Montaña o playa?","¿Madrugador/a o nocturno/a?","¿Dulce o salado?","¿Planear todo o fluir?","¿Fiesta grande o noche tranquila en casa?",
-    "¿Mensajes o llamadas?","¿Amanecer o atardecer?","¿Cocinar en casa o salir a comer?"],
+    "¿Mensajes o llamadas?","¿Amanecer o atardecer?","¿Cocinar en casa o salir a comer?",
+    "¿Luces prendidas o apagadas?","¿Lento o intenso?","¿Iniciar o que te inicien?","¿Beso corto o beso largo?","¿Sorpresa o planeado?","¿Silencio o música?","¿En casa o afuera?"],
   playful:["Dale a {p} un discurso motivador de 10 segundos.","Hacé tu mejor imitación de {p} pidiendo un café.",
-    "Describí a {p} usando solo títulos de películas.","Decile a {p} un cumplido que nunca le hayas dicho.","Recreá la cara que pusiste en su primera cita."],
+    "Describí a {p} usando solo títulos de películas.","Decile a {p} un cumplido que nunca le hayas dicho.","Recreá la cara que pusiste en su primera cita.",
+    "Dale a {p} un beso de 10 segundos donde menos se lo espere.","Susurrale algo subido de tono a {p} al oído.",
+    "Hacele a {p} un masaje de 30 segundos.","Bailá 20 segundos para {p}, sin reírte.","Mirá a {p} a los ojos 20 segundos sin hablar.","Imitá cómo te coquetea {p}.","Dale a {p} tres besos donde quieras.","Decile a {p} al oído qué te gustaría hacer después."],
   connection:["Díganse una cosa por la que están agradecidos hoy.","Compartan un recuerdo de ustedes dos que siempre los haga sonreír.",
-    "Nombren algo que tengan ganas de hacer juntos.","Levantá la vista del teléfono y decí algo lindo, en voz alta."],
+    "Nombren algo que tengan ganas de hacer juntos.","Levantá la vista del teléfono y decí algo lindo, en voz alta.","Díganse qué fue lo que los enamoró.","Agradézcanse algo que el otro hizo esta semana.","Planeen su próxima escapada, una frase cada uno."],
   wager:["Concurso de miradas de 10 segundos. El que pierde prepara el próximo snack.","El primero que se ría hace el baile ridículo que elija el otro.",
-    "Piedra, papel o tijera: el ganador elige la próxima canción."]};
+    "Piedra, papel o tijera: el ganador elige la próxima canción.",
+    "Pulseada de miradas: el que se ríe primero cumple un deseo del otro.","El que gana elige la próxima prenda que se saca el otro.","El que aguanta más la mirada le da una orden al otro.","Piedra, papel o tijera: el que pierde cumple un deseo del ganador."],
+  prenda:["Sacate una prenda.","Sacate una prenda… o un beso de 15 segundos a cambio.","El que tiene más ropa puesta se saca una prenda.",
+    "Sacate una prenda y {p} elige cuál te sacás después.","Elegí: te sacás una prenda vos, o se la sacás a {p}.","Sacate dos prendas… o una y un beso.","Se saca una prenda quien perdió la última apuesta.","{p} elige qué prenda te sacás."],
+  castigo:["Tomá un trago.","Tomá un trago… o cumplí el reto que elija {p}.","Un trago, o un masaje de 30 segundos para {p}.",
+    "{p} decide: un trago o un reto picante.","Tomá un trago y contale a {p} algo que nunca le dijiste.","Tomá un trago o dejá que {p} te dé una orden por un minuto.","Un trago, o un baile de 20 seg para {p}.","Tomá un trago o mandale un mensaje atrevido a {p} (aunque esté al lado)."]};
 
 /* ----------------------- ALMACÉN (persistencia) -------------------------- */
-const LS_CONTENT='cya_content_v1',LS_PROFILE='cya_profile_v3';
+const LS_CONTENT='cya_content_v3',LS_PROFILE='cya_profile_v3';
 let storageOK=true;
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){storageOK=false;return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);return true;}catch(e){storageOK=false;return false;}}
@@ -146,16 +163,17 @@ const Profile={
 /* ----------------------------- MODE PACK --------------------------------- */
 const SYMBOLS={salida:{emoji:'⭐',color:0xf4b860,label:'Salida'},pregunta:{emoji:'❓',color:0x8fb8e0,label:'Pregunta'},
   reto:{emoji:'🎭',color:0xe8717a,label:'Reto'},apuesta:{emoji:'🔥',color:0xff9d5c,label:'Apuesta'},
+  prenda:{emoji:'👙',color:0xff7eb3,label:'Prenda'},castigo:{emoji:'🥃',color:0xc99a5b,label:'Castigo'},
   momento:{emoji:'💛',color:0x8fd6a0,label:'Momento'},premio:{emoji:'🎁',color:0xd9a8f0,label:'Premio'}};
-const MODE_PACK={scoring:{reveal:{nailed:{sp:3,conn:14},close:{sp:2,conn:9},wayoff:{answererSp:3,conn:5}},match:{sp:1,conn:8},playful:{sp:2,conn:7},reward:{sp:2,conn:4},wager_win:{sp:3,conn:6},wager_skip:{conn:3}},
-  win:{lapsToGoal:1,connectionDeep:60,turnCap:18},
-  boardTypes:["salida","pregunta","reto","premio","pregunta","momento","pregunta","apuesta","reto","pregunta","premio","reto","momento","pregunta","apuesta","reto"]};
+const MODE_PACK={scoring:{reveal:{nailed:{sp:3,conn:14},close:{sp:2,conn:9},wayoff:{answererSp:3,conn:5}},match:{sp:1,conn:8},playful:{sp:2,conn:7},reward:{sp:2,conn:4},wager_win:{sp:4,conn:6},wager_skip:{conn:3},dare:{sp:4,conn:6,skipRival:3}},
+  win:{lapsToGoal:1,connectionDeep:60,turnCap:20},
+  boardTypes:["salida","pregunta","castigo","reto","prenda","pregunta","momento","apuesta","reto","castigo","pregunta","prenda","premio","reto","pregunta","castigo","momento","prenda","apuesta","reto"]};
 
 /* ----------------------------- MOTOR ------------------------------------- */
 let lastDraw={};
 const Engine={state:null,
   newGame(p0,p1){this.state={players:[{name:p0.name||"Jugador 1",color:p0.color,sparks:0,pos:0,laps:0},{name:p1.name||"Jugador 2",color:p1.color,sparks:0,pos:0,laps:0}],connection:0,active:0,turn:0,view:{s:'turn'},roll:0};lastDraw={};return this.state;},
-  roll(){return 1+Math.floor(Math.random()*3);},
+  roll(){return 1+Math.floor(Math.random()*6);},
   drawByCat(cat){let pool=Content.enabled(cat);if(!pool.length)return null;if(pool.length>1)pool=pool.filter(i=>i.id!==lastDraw[cat]);const pick=pool[Math.floor(Math.random()*pool.length)];lastDraw[cat]=pick.id;return pick.text;},
   tileCat(pos){return MODE_PACK.boardTypes[pos%MODE_PACK.boardTypes.length];},
   advance(steps){const s=this.state,p=s.players[s.active],n=MODE_PACK.boardTypes.length;for(let i=0;i<steps;i++){p.pos=(p.pos+1)%n;if(p.pos===0)p.laps++;}return p.pos;},
@@ -206,14 +224,22 @@ function onNetClosed(){alert('Se cortó la conexión con el otro teléfono.');NE
 
 /* ----------------------------- TABLERO 3D -------------------------------- */
 let renderer,scene,camera,tiles=[],tileIcons=[],tokens=[],die,dieSpin=0,raf,scene3DReady=false,lastPos=[-1,-1];
-const camState={radius:14,theta:0,phi:0.92};
-function ringPositions(){const N=5,gap=1.32,off=(N-1)/2,ring=[],pts=[];
+const camState={radius:16.5,theta:0,phi:0.92};
+function ringPositions(){const N=6,gap=1.16,off=(N-1)/2,ring=[],pts=[];
   for(let c=0;c<N;c++)ring.push([0,c]);for(let r=1;r<N;r++)ring.push([r,N-1]);for(let c=N-2;c>=0;c--)ring.push([N-1,c]);for(let r=N-2;r>=1;r--)ring.push([r,0]);
   ring.forEach(([r,c])=>pts.push([(c-off)*gap,0,(r-off)*gap]));return pts;}
 function updateCamera(){if(!camera)return;const r=camState.radius,p=camState.phi,t=camState.theta;
   camera.position.set(r*Math.sin(p)*Math.sin(t),r*Math.cos(p),r*Math.sin(p)*Math.cos(t));camera.lookAt(0,0,0);}
 function symbolTexture(emoji,bgHex){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
   x.fillStyle=bgHex;x.fillRect(0,0,128,128);x.font='72px serif';x.textAlign='center';x.textBaseline='middle';x.fillText(emoji,64,72);return new THREE.CanvasTexture(c);}
+function dieFaceTexture(n){const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,128,128);g.addColorStop(0,'#fff7ea');g.addColorStop(1,'#f1d9bd');x.fillStyle=g;rr(x,6,6,116,116,22);x.fill();
+  x.strokeStyle='rgba(120,80,40,.25)';x.lineWidth=3;rr(x,6,6,116,116,22);x.stroke();
+  if(n>0){x.fillStyle='#2a1d2e';x.font='bold 86px system-ui,Arial';x.textAlign='center';x.textBaseline='middle';x.fillText(String(n),64,70);}
+  else{x.fillStyle='#c99a5b';x.font='62px serif';x.textAlign='center';x.textBaseline='middle';x.fillText('🎲',64,68);}
+  return new THREE.CanvasTexture(c);}
+function rr(x,a,b,w,h,r){x.beginPath();x.moveTo(a+r,b);x.arcTo(a+w,b,a+w,b+h,r);x.arcTo(a+w,b+h,a,b+h,r);x.arcTo(a,b+h,a,b,r);x.arcTo(a,b,a+w,b,r);x.closePath();}
+function setDieFace(n){if(die){die.material.map=dieFaceTexture(n);die.material.needsUpdate=true;}}
 function iconBadge(emoji,bgHex){const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d');
   x.save();x.shadowColor=bgHex;x.shadowBlur=26;x.fillStyle=bgHex;x.beginPath();x.arc(80,80,62,0,7);x.fill();x.restore();
   x.beginPath();x.arc(80,80,62,0,7);x.fillStyle=bgHex;x.fill();
@@ -247,7 +273,7 @@ function initScene(){if(typeof THREE==='undefined'){console.warn('Sin 3D — cor
     const badge=new THREE.Mesh(new THREE.PlaneGeometry(.62,.62),new THREE.MeshBasicMaterial({map:iconBadge(meta.emoji,hex(meta.color)),transparent:true,depthWrite:false,side:THREE.DoubleSide}));
     badge.position.set(p[0],.62,p[2]);badge.userData={baseY:.62,off:i*0.7,pop:0};scene.add(badge);tileIcons.push(badge);});
   [0,1].forEach(i=>{const g=buildToken(i);scene.add(g);tokens.push(g);});
-  die=new THREE.Mesh(new THREE.BoxGeometry(.7,.7,.7),new THREE.MeshStandardMaterial({color:0xfff2dc,roughness:.35,metalness:.1}));die.position.set(0,.8,0.1);scene.add(die);
+  die=new THREE.Mesh(new THREE.BoxGeometry(.85,.85,.85),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.4,metalness:.05,map:dieFaceTexture(0)}));die.position.set(0,1.05,0.1);scene.add(die);
   scene3DReady=true;setupControls(cv);animate();addEventListener('resize',resize);}
 function resize(){if(!renderer)return;renderer.setSize(innerWidth,innerHeight);if(camera){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}}
 function tokenTarget(idx){const pts=ringPositions(),p=pts[Engine.state.players[idx].pos],o=idx===0?-0.17:0.17;return new THREE.Vector3(p[0]+o,.1,p[2]+o);}
@@ -255,7 +281,7 @@ function placeTokens(instant){if(!scene3DReady||!Engine.state)return;tokens.forE
 function updateTokenAppearance(){if(!scene3DReady)return;[0,1].forEach(i=>{const e=Profile.data['p'+(i+1)],col=e.color,ud=tokens[i].userData;
   ud.ring.material.color.setHex(col);ud.ring.material.emissive.setHex(col);ud.body.material.color.setHex(col);ud.disc.material.map=avatarTexture(e,hex(col));ud.disc.material.needsUpdate=true;});}
 function syncBoard(){if(!scene3DReady||!Engine.state)return;const p0=Engine.state.players[0].pos,p1=Engine.state.players[1].pos;
-  if(p0!==lastPos[0]||p1!==lastPos[1]){const moved=lastPos[0]!==-1;placeTokens(!moved);if(moved){dieSpin=18;if(tileIcons[p0])tileIcons[p0].userData.pop=1;if(tileIcons[p1])tileIcons[p1].userData.pop=1;}lastPos=[p0,p1];}}
+  if(p0!==lastPos[0]||p1!==lastPos[1]){const moved=lastPos[0]!==-1;placeTokens(!moved);if(moved){dieSpin=22;setDieFace(Engine.state.roll);if(tileIcons[p0])tileIcons[p0].userData.pop=1;if(tileIcons[p1])tileIcons[p1].userData.pop=1;}lastPos=[p0,p1];}}
 function animate(){raf=requestAnimationFrame(animate);const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;const tnow=performance.now()*0.001;
   tileIcons.forEach(ic=>{if(camera)ic.quaternion.copy(camera.quaternion);const u=ic.userData;
     if(u.pop>0)u.pop=Math.max(0,u.pop-0.035);const bob=reduce?0:Math.sin(tnow*1.5+u.off)*0.05;const s=1+u.pop*0.45;
@@ -274,6 +300,7 @@ function setupControls(cv){const pts=new Map();let pinch=null;
 
 /* ----------------------------- LÓGICA DE JUEGO (host autoritativo) -------- */
 const SC=MODE_PACK.scoring;
+function dareText(cat){return (Engine.drawByCat(cat)||'').replace('{p}',partnerName()).replace('{a}',activeName());}
 function viewForCat(cat){const s=Engine.state;
   switch(cat){
     case 'salida':return {s:'outro',title:'¡Diste la vuelta al tablero!',sub:'+ impulso'};
@@ -281,6 +308,8 @@ function viewForCat(cat){const s=Engine.state;
     case 'momento':return {s:'connection',q:Engine.drawByCat('connection')||'Mírense y díganse algo lindo.'};
     case 'apuesta':return Content.has('wager')?{s:'wager',q:Engine.drawByCat('wager')||''}:viewForCat('premio');
     case 'reto':return Content.has('playful')?{s:'playful',q:(Engine.drawByCat('playful')||'').replace('{p}',partnerName())}:viewForCat('premio');
+    case 'prenda':return Content.has('prenda')?{s:'dare',kind:'prenda',q:dareText('prenda')}:viewForCat('premio');
+    case 'castigo':return Content.has('castigo')?{s:'dare',kind:'castigo',q:dareText('castigo')}:viewForCat('premio');
     case 'pregunta':default:{const k=['reveal','reveal','match'].filter(c=>Content.has(c));if(!k.length)return viewForCat('premio');
       if(k[Math.floor(Math.random()*k.length)]==='match')return {s:'match',q:Engine.drawByCat('match')||''};
       return {s:'reveal_q',q:(Engine.drawByCat('reveal')||'').replace('{a}',activeName())};}}}
@@ -288,7 +317,8 @@ function hostApply(intent,payload,fromIdx){const s=Engine.state;if(!s)return;con
   // sólo el actor correcto puede accionar
   if(actorIdx(v)!==fromIdx && intent!=='again')return;
   switch(intent){
-    case 'roll':{const steps=Engine.roll();Engine.advance(steps);s.roll=steps;const pos=s.players[s.active].pos;s.view=viewForCat(pos===0?'salida':Engine.tileCat(pos));break;}
+    case 'roll':{const steps=Engine.roll();s.roll=steps;s.view={s:'rolling',roll:steps};break;}
+    case 'roll_go':{Engine.advance(s.roll);const pos=s.players[s.active].pos;s.view=viewForCat(pos===0?'salida':Engine.tileCat(pos));break;}
     case 'reveal_ready':s.view={s:'reveal_guess',q:v.q};break;
     case 'guess':s.view={s:'reveal_judge',q:v.q,guess:(payload&&payload.guess)||'(sin respuesta)'};break;
     case 'judge':{const ai=s.active,gi=partnerIdx();const r=payload&&payload.result;
@@ -302,6 +332,8 @@ function hostApply(intent,payload,fromIdx){const s=Engine.state;if(!s)return;con
     case 'wager_skip':Engine.addScore({conn:SC.wager_skip.conn});s.view={s:'outro',title:'Se eligieron a ustedes antes que a la apuesta.',sub:'+ Conexión'};break;
     case 'wager_winner':{const i=payload&&payload.idx;Engine.addScore({playerIdx:i,sparks:SC.wager_win.sp,conn:SC.wager_win.conn});s.view={s:'outro',title:`¡${s.players[i].name} se lleva la apuesta!`,sub:`+${SC.wager_win.sp} Chispas`};break;}
     case 'connection_done':Engine.addScore({conn:6});s.view={s:'outro',title:'Eso vale todo.',sub:'+ Conexión'};break;
+    case 'dare_done':Engine.addScore({playerIdx:s.active,sparks:SC.dare.sp,conn:SC.dare.conn});s.view={s:'outro',title:'¡Lo hiciste! 🔥',sub:`+${SC.dare.sp} Chispas para ${activeName()}`};break;
+    case 'dare_skip':Engine.addScore({playerIdx:partnerIdx(),sparks:SC.dare.skipRival});s.view={s:'outro',title:'Te rajaste 😏',sub:`+${SC.dare.skipRival} Chispas para ${partnerName()}`};break;
     case 'continue':if(Engine.checkWin()){s.view={s:'end'};}else{Engine.endTurn();s.view={s:'turn'};}break;
     case 'again':Engine.newGame(Profile.data.p1,Profile.data.p2);break;
   }
@@ -340,9 +372,10 @@ function render(){const v=Engine.state&&Engine.state.view;if(!v)return;
   const local=NET.mode==='local',actor=actorIdx(v),canAct=local||actor===NET.myIdx;
   const actorName=Engine.state.players[actor].name;
   if(v.s!=='reveal_guess')rgPassed=false;
-  if(!canAct&&v.s!=='end')return renderWaiting(actorName);
+  if(!canAct&&v.s!=='end'&&v.s!=='rolling')return renderWaiting(actorName);
   switch(v.s){
     case 'turn':return renderTurn();
+    case 'rolling':return renderRolling(v);
     case 'reveal_q':return renderRevealQ(v);
     case 'reveal_guess':return renderRevealGuess(v,local);
     case 'reveal_judge':return renderRevealJudge(v);
@@ -351,6 +384,7 @@ function render(){const v=Engine.state&&Engine.state.view;if(!v)return;
     case 'wager':return renderWager(v);
     case 'wager_win':return renderWagerWin(v);
     case 'connection':return renderConnection(v);
+    case 'dare':return renderDare(v);
     case 'outro':return renderOutro(v,local);
     case 'end':return renderEnd();}}
 function renderWaiting(name){show(`<div class="card center wait"><div class="pulse"></div>
@@ -364,8 +398,27 @@ function renderTurn(){const s=Engine.state,p=s.players[s.active];
     ${NET.mode==='local'?`<button class="btn ghost" style="margin-top:12px" onclick="ed.fromGame=true;hideHud();screenEditor()">Editar preguntas</button>`:''}
   </div>`);}
 function rollHdr(){return Engine.state.roll?`<div class="eyebrow">🎲 ${activeName()} sacó ${Engine.state.roll}</div>`:'';}
+function renderRolling(v){const s=Engine.state,p=s.players[s.active];
+  const local=NET.mode==='local',canAct=local||actorIdx(v)===NET.myIdx;
+  show(`<div class="card center">
+    <div class="who" style="color:${hex(p.color)}">${avatarChar(p)} ${esc(p.name)}</div>
+    <div class="dice" id="diceNum">·</div>
+    <p id="diceHint">Tirando…</p>
+    ${canAct?`<button class="btn" id="diceGo" style="visibility:hidden" onclick="if(Engine.state.view&&Engine.state.view.s==='rolling')act('roll_go')">Avanzar</button>`:`<p class="mini">Mirá la tirada…</p>`}
+  </div>`);
+  if(scene3DReady)dieSpin=28;
+  const el=$('diceNum');let n=0;
+  const iv=setInterval(()=>{
+    if(!el||!document.body.contains(el)){clearInterval(iv);return;}
+    el.textContent=1+Math.floor(Math.random()*6);n++;
+    if(n>=13){clearInterval(iv);el.textContent=v.roll;el.classList.add('dice--land');
+      const h=$('diceHint');if(h)h.textContent=v.roll===6?'¡Seis! 🔥':(v.roll===1?'Uno… tranqui':'¡'+v.roll+'!');
+      const go=$('diceGo');if(go){go.textContent='Avanzar '+v.roll;go.style.visibility='visible';}
+      if(canAct)setTimeout(()=>{if(Engine.state.view&&Engine.state.view.s==='rolling')act('roll_go');},900);
+    }
+  },65);}
 function renderRevealQ(v){const a=Engine.state.players[Engine.state.active],g=Engine.state.players[partnerIdx()];
-  show(`<div class="card"><div class="tag">❓ Revelar y adivinar</div><h3 class="prompt">${esc(v.q)}</h3>
+  show(`<div class="card card--draw"><div class="tag">❓ Revelar y adivinar</div><h3 class="prompt">${esc(v.q)}</h3>
     <p><b style="color:var(--text)">${esc(a.name)}</b>, pensá tu respuesta y mantenela en secreto.
     <b style="color:var(--text)">${esc(g.name)}</b> va a tratar de adivinarla.</p>
     <button class="btn" onclick="act('reveal_ready')">Que adivine ${esc(g.name)}</button></div>`);}
@@ -383,23 +436,29 @@ function renderRevealJudge(v){const a=Engine.state.players[Engine.state.active],
     <button class="btn" onclick="act('judge',{result:'nailed'})">¡Le pegó! ♥</button>
     <button class="btn ghost" onclick="act('judge',{result:'close'})">Bastante cerca</button>
     <button class="btn ghost" onclick="act('judge',{result:'wayoff'})">Muy lejos (¡linda sorpresa!)</button></div>`);}
-function renderMatch(v){show(`<div class="card center">${rollHdr()}<div class="tag">❓ ¿En sintonía?</div><h3 class="prompt">${esc(v.q)}</h3>
+function renderMatch(v){show(`<div class="card center card--draw">${rollHdr()}<div class="tag">❓ ¿En sintonía?</div><h3 class="prompt">${esc(v.q)}</h3>
     <p>Respondan al mismo tiempo — ¡a la cuenta de tres!</p>
     <button class="btn" onclick="act('match',{matched:true})">¡Coincidimos!</button>
     <button class="btn ghost" onclick="act('match',{matched:false})">No coincidimos (igual divertido)</button></div>`);}
 function renderPlayful(v){const act_=Engine.state.players[Engine.state.active],judge=Engine.state.players[partnerIdx()];
-  show(`<div class="card"><div class="tag">🎭 Reto</div><h3 class="prompt">${esc(act_.name)}: ${esc(v.q)}</h3>
+  show(`<div class="card card--draw"><div class="tag">🎭 Reto</div><h3 class="prompt">${esc(act_.name)}: ${esc(v.q)}</h3>
     <p>${esc(judge.name)}, juzgá cómo salió.</p>
     <button class="btn" onclick="act('playful')">¡Me encantó! ♥</button>
     <button class="btn ghost" onclick="act('playful_skip')">Saltar</button></div>`);}
-function renderWager(v){show(`<div class="card center">${rollHdr()}<div class="tag">🔥 Apuesta opcional</div><h3 class="prompt">${esc(v.q)}</h3>
+function renderWager(v){show(`<div class="card center card--draw">${rollHdr()}<div class="tag">🔥 Apuesta opcional</div><h3 class="prompt">${esc(v.q)}</h3>
     <p>Solo si los dos quieren. Decir que no siempre es gratis.</p>
     <button class="btn" onclick="act('wager_play')">Le entramos</button>
     <button class="btn ghost" onclick="act('wager_skip')">Saltar (sin penalización)</button></div>`);}
 function renderWagerWin(v){const s=Engine.state;show(`<div class="card center"><div class="tag">¿Quién ganó?</div><h3 class="prompt">Defínanlo y toquen al ganador.</h3>
     <button class="btn" style="background:linear-gradient(180deg,${hex(s.players[0].color)},${hex(s.players[0].color)})" onclick="act('wager_winner',{idx:0})">${esc(s.players[0].name)}</button>
     <button class="btn" style="background:linear-gradient(180deg,${hex(s.players[1].color)},${hex(s.players[1].color)})" onclick="act('wager_winner',{idx:1})">${esc(s.players[1].name)}</button></div>`);}
-function renderConnection(v){show(`<div class="card center">${rollHdr()}<div class="tag">💛 Un momento</div><h3 class="prompt">${esc(v.q)}</h3>
+function renderDare(v){const meta=SYMBOLS[v.kind];const s=Engine.state,p=s.players[s.active];
+  show(`<div class="card center card--draw"><div class="tag">${meta.emoji} ${meta.label}</div>
+    <h3 class="prompt">${esc(p.name)}: ${esc(v.q)}</h3>
+    <p>Cumplilo y sumás Chispas. Si te rajás, ${esc(partnerName())} se las lleva.</p>
+    <button class="btn" onclick="act('dare_done')">Lo hice 🔥</button>
+    <button class="btn ghost" onclick="act('dare_skip')">Paso (gana ${esc(partnerName())})</button></div>`);}
+function renderConnection(v){show(`<div class="card center card--draw">${rollHdr()}<div class="tag">💛 Un momento</div><h3 class="prompt">${esc(v.q)}</h3>
     <p>Acá no hay puntos. Solo ustedes dos.</p><button class="btn" onclick="act('connection_done')">Listo</button></div>`);}
 function renderOutro(v,local){const win=Engine.checkWinPreview();
   let btn;
@@ -411,16 +470,18 @@ Engine.checkWinPreview=function(){return this.checkWin();};
 function passLocal(){const nxt=Engine.state.players[partnerIdx()].name;
   $('veilTitle').textContent=`${nxt}, te toca`;$('veilText').innerHTML=`Pasale el teléfono a <b>${esc(nxt)}</b>.`;
   veil.style.display='flex';$('veilBtn').textContent='Ya lo tengo';$('veilBtn').onclick=()=>{veil.style.display='none';act('continue');};}
-function renderEnd(){const s=Engine.state,a=s.players[0],b=s.players[1],deep=s.connection>=MODE_PACK.win.connectionDeep;let lead;
-  if(a.sparks===b.sparks)lead=`Empate — ${a.sparks} Chispas cada uno.`;else{const w=a.sparks>b.sparks?a:b;lead=`${w.name} quedó al frente con ${w.sparks} Chispas.`;}
+function renderEnd(){const s=Engine.state,a=s.players[0],b=s.players[1],deep=s.connection>=MODE_PACK.win.connectionDeep;
+  const tie=a.sparks===b.sparks,wIdx=a.sparks>=b.sparks?0:1,crown=i=>(!tie&&wIdx===i)?'👑 ':'';
+  const lead=tie?`¡Empate, ${a.sparks} a ${b.sparks}! Va a haber que desempatar… 😏`:`Gana ${esc(s.players[wIdx].name)} con ${s.players[wIdx].sparks} Chispas.`;
   hideHud();
-  show(`<div class="card center"><div class="eyebrow">Resumen de la partida</div><div class="spacer"></div>
-    <h2 class="display" style="font-size:32px">${deep?'Conexión profunda ♥':'Bien jugado'}</h2>
-    <p style="margin-top:10px">${esc(lead)}<br>${deep?'Y juntos llenaron el medidor de Conexión — esa es la verdadera victoria.':'Construyeron '+s.connection+'% de Conexión juntos. Otra ronda y llegan.'}</p>
+  show(`<div class="card center"><div class="eyebrow">Fin de la partida</div><div class="spacer"></div>
+    <h2 class="display" style="font-size:32px">${tie?'Empate':'¡Gana '+esc(s.players[wIdx].name)+'! 👑'}</h2>
+    <p style="margin-top:10px">${lead}</p>
     <div style="display:flex;gap:12px;margin-top:8px">
-      <div class="score" style="flex:1"><div class="nm">${avatarChar(a)} ${esc(a.name)}</div><div class="sp">${a.sparks}</div><div class="spl">Chispas</div></div>
-      <div class="score" style="flex:1"><div class="nm">${avatarChar(b)} ${esc(b.name)}</div><div class="sp">${b.sparks}</div><div class="spl">Chispas</div></div></div>
-    ${(NET.mode==='local'||NET.myIdx===0)?`<button class="btn" onclick="againGame()">Jugar de nuevo</button>`:`<p class="mini">Esperando que ${esc(a.name)} elija…</p>`}
+      <div class="score" style="flex:1"><div class="nm">${crown(0)}${avatarChar(a)} ${esc(a.name)}</div><div class="sp">${a.sparks}</div><div class="spl">Chispas</div></div>
+      <div class="score" style="flex:1"><div class="nm">${crown(1)}${avatarChar(b)} ${esc(b.name)}</div><div class="sp">${b.sparks}</div><div class="spl">Chispas</div></div></div>
+    ${deep?`<div class="bonus">💛 Conexión al tope — bonus de pareja: péguense un beso y elijan un deseo cada uno.</div>`:`<p class="mini">Conexión: ${s.connection}%. Llénenla y desbloquean el bonus de pareja.</p>`}
+    ${(NET.mode==='local'||NET.myIdx===0)?`<button class="btn" onclick="againGame()">Revancha</button>`:`<p class="mini">Esperando que ${esc(a.name)} elija…</p>`}
     <button class="btn ghost" onclick="leaveToStart()">Por hoy listo</button></div>`);}
 function againGame(){if(NET.mode==='local'){Engine.newGame(Profile.data.p1,Profile.data.p2);lastPos=[-1,-1];showHud();refreshHud();syncBoard();render();}
   else{act('again');showHud();}}
